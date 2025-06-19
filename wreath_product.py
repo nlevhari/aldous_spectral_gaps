@@ -86,3 +86,64 @@ def build_wreath_product(m, n):
     
     return group_elements, elem_to_idx, idx_to_elem
 
+
+
+###############################################################################
+# 1.  ρ(g):  build once, then cache
+###############################################################################
+from functools import lru_cache
+
+@lru_cache(maxsize=None)
+def rho_matrix(elem, n, m):
+    """
+    elem  = (sigma, a_tuple)  ∈  C_m^n ⋊ S_n
+    Return its  (mn)×(mn)  matrix in the basis
+       [(0,0),(0,1),…,(0,n-1), (1,0), …, (m-1,n-1)]
+    """
+    d   = m * n
+    M   = np.zeros((d, d), dtype=float)
+
+    # index helper:  colour-major order
+    def idx(x, i):      # x ∈ {0..m-1},  i ∈ {0..n-1}
+        return x * n + i
+
+    sigma, a = elem
+    inv_sig  = invert_permutation(sigma)
+
+    for x in range(m):
+        for i in range(n):
+            j      = sigma[i]
+            x_new  = (x + a[inv_sig[i]]) % m
+            M[idx(x_new, j), idx(x, i)] = 1.0
+    return M
+
+
+###############################################################################
+# 2.  ρ⊗ρ(E)  =  Σ_g  α_g · (ρ(g) ⊗ ρ(g))
+###############################################################################
+def tensor_rep_matrix(E_dict, n, m):
+    """
+    Build the big  (mn)² × (mn)²  matrix of E in ρ⊗ρ.
+    """
+    d  = m * n
+    big = np.zeros((d*d, d*d), dtype=float)
+
+    for g, coeff in E_dict.items():
+        R = rho_matrix(g, n, m)     # pulled from cache or built once
+        big += coeff * np.kron(R, R)
+    return big
+
+###############################################################################
+# 3.  Spectrum helpers
+###############################################################################
+def eigenvalues_tensor(E_dict, n, m):
+    M = tensor_rep_matrix(E_dict, n, m)
+    vals = np.linalg.eigvals(M)     # real but not guaranteed symmetric
+    return np.sort(vals.real)
+
+def smallest_tensor(E_dict, n, m, tol=1e-12):
+    vals = eigenvalues_tensor(E_dict, n, m)
+    # skip numerically-zero mode
+    return round(vals[0], 2)
+
+

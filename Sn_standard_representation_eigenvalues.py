@@ -57,7 +57,8 @@ def eigenvalues_standard_sn(E_dict, n):
     # 2) Build n x n permutation matrix
     M = build_perm_rep_matrix(E_sn_dict, n)
     
-    vals = np.linalg.eigvals(M)
+    vals, vecs = np.linalg.eig(M)
+    vals = [round(v,2) for v in vals]
     
     return vals
 

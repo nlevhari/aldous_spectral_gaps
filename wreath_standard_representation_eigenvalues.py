@@ -62,5 +62,7 @@ def build_rep_Cmxn_matrix(E_dict, n, m):
 
 def eigenvalues_Cmxn(E_dict, n, m):
     M, basis_to_idx = build_rep_Cmxn_matrix(E_dict, n, m)
-    vals = np.linalg.eigvals(M)
+    vals, vecs = np.linalg.eig(M)
+    for i in range(len(vals)):
+        print(np.round(vals[i], 2), np.round(vecs[:,i], 2))
     return vals
