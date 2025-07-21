@@ -139,11 +139,11 @@ def tensor_rep_matrix(E_dict, n, m):
 def eigenvalues_tensor(E_dict, n, m):
     M = tensor_rep_matrix(E_dict, n, m)
     vals = np.linalg.eigvals(M)     # real but not guaranteed symmetric
-    return np.sort(vals.real)
+    return np.sort([round(val,2) for val in vals.real])
 
 def smallest_tensor(E_dict, n, m, tol=1e-12):
     vals = eigenvalues_tensor(E_dict, n, m)
     # skip numerically-zero mode
-    return round(vals[0], 2)
+    return vals[0]
 
 

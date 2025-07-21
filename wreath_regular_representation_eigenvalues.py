@@ -35,7 +35,7 @@ def eigenvalues_regular(E_dict, group_elements, elem_to_idx, m):
     # and J_{i,j} is a sum of group elements plus identity, 
     # but let's not assume that. We'll just use eig.
     vals = np.linalg.eigvals(M)
-    return vals
+    return sorted([round(val, 2) for val in vals], reverse=True)  # Round for consistency
 
 def second_smallest_eigenvalue(vals, tol=1e-12):
     # Sort the real parts (or magnitudes). Typically they should be real anyway.
