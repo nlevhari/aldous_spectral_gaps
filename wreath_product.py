@@ -147,3 +147,115 @@ def smallest_tensor(E_dict, n, m, tol=1e-12):
     return vals[0]
 
 
+class WreathProductElement:
+    def __init__(self, sigma, a_tuple):
+        """
+        Initialize a wreath product element.
+        sigma: permutation tuple in S_n
+        a_tuple: bottom component tuple in C_m^n
+        """
+        self.sigma = sigma
+        self.a_tuple = tuple(a_tuple)
+
+    def __repr__(self):
+        return f"WreathProductElement(sigma={self.sigma}, a_tuple={self.a_tuple})"
+
+    def __eq__(self, other):
+        return (self.sigma == other.sigma) and (self.a_tuple == other.a_tuple)
+
+    def __hash__(self):
+        return hash((self.sigma, self.a_tuple))
+    
+    def to_tuple(self):
+        """
+        Convert to tuple representation for hashing or storage.
+        """
+        return (self.sigma, self.a_tuple)
+
+    @staticmethod
+    def from_tuple(tup):
+        """
+        Convert from tuple representation to WreathProductElement.
+        """
+        return WreathProductElement(tup[0], tup[1])
+
+    def __mul__(self, other):
+        """
+        Multiply two wreath product elements.
+        """
+        if isinstance(other, WreathProductElement):
+            return WreathProductElement.from_tuple(group_multiply(self.to_tuple(), other.to_tuple(), len(self.a_tuple)))
+        else:
+            raise TypeError("Can only multiply with another WreathProductElement")
+
+class WreathProductGroupAlgebraElement:
+    def __init__(self, coeffs, n=0):
+        """
+        Initialize a group algebra element.
+        coeffs: dictionary mapping WreathProductElement to coefficient or scalar (in that case, n should be input).
+        n: size of the group symmetrized, used to create the identity element if coeffs is a scalar. 
+        """
+        if n!=0:
+            self.coeffs = {WreathProductElement.from_tuple((identity_permutation(n), [0]*n)): coeffs}
+        else:
+            self.coeffs = coeffs
+
+    def __repr__(self):
+        return f"WreathProductGroupAlgebraElement(coeffs={self.coeffs})"
+    
+    def __eq__(self, other):
+        visited = set()
+        for k in self.coeffs:
+            if not np.isclose(self.coeffs.get(k, 0), other.coeffs.get(k, 0)):
+                return False
+            visited.add(k)
+        for k in other.coeffs:
+            if k not in visited and not np.isclose(other.coeffs.get(k, 0), 0):
+                return False
+        return True
+    
+    def __add__(self, other):
+        """
+        Add two group algebra elements.
+        """
+        new_coeffs = self.coeffs.copy()
+        for k, v in other.coeffs.items():
+            new_coeffs[k] = new_coeffs.get(k, 0) + v
+        return WreathProductGroupAlgebraElement(new_coeffs)
+    
+    def __sub__(self, other):
+        """
+        Subtract two group algebra elements.
+        """
+        new_coeffs = self.coeffs.copy()
+        for k, v in other.coeffs.items():
+            new_coeffs[k] = new_coeffs.get(k, 0) - v
+        return WreathProductGroupAlgebraElement(new_coeffs)
+    
+    def __mul__(self, other):
+        result = {}
+        if type(other) is not WreathProductGroupAlgebraElement:
+            # Scalar multiplication
+            for k, v in self.coeffs.items():
+                result[k] = v * other
+            return WreathProductGroupAlgebraElement(result)
+        for k1, v1 in self.coeffs.items():
+            for k2, v2 in other.coeffs.items():
+                product_elem = k1*k2
+                result[product_elem] = result.get(product_elem, 0) + v2 * v1
+        return WreathProductGroupAlgebraElement(result)
+    
+    def __truediv__(self, scalar):
+        """
+        Divide all coefficients by a scalar.
+        """
+        if scalar <= 0.001:
+            raise ZeroDivisionError("Cannot divide by zero or a very small number.")
+        new_coeffs = {k: v / scalar for k, v in self.coeffs.items()}
+        return WreathProductGroupAlgebraElement(new_coeffs)
+    
+    def get_dict(self):
+        """
+        Return the dictionary of coefficients.
+        """
+        return self.coeffs
