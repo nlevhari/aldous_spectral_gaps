@@ -3,11 +3,12 @@ import time
 import numpy as np
 import itertools
 import argparse
+from pprint import pprint
 
 from Sn_standard_representation_eigenvalues import eigenvalues_standard_sn
 from wreath_laplacian import get_E_element, get_F_element
-from wreath_octopus import coloured_octopus
-from wreath_product import build_wreath_product, smallest_tensor
+from wreath_octopus import Gammas, coloured_octopus
+from wreath_product import build_wreath_product, eigenvalues_tensor, smallest_tensor
 from wreath_regular_representation_eigenvalues import eigenvalues_regular
 from wreath_standard_representation_eigenvalues import eigenvalues_Cmxn
 
@@ -72,28 +73,59 @@ def eigenvalue_computation(n, m, randomize_c=False, c_dict_=None, verbose=False,
         exit(0)
 
 def check_octopus(n, m):
-    smallest_tensors = []
-    for nn in range(3, n+1):
-        for mm in range(2, m+1):
-            print(f"running on n = {nn} and m = {mm}")
-            start = time.time()
-            for k in range(10):
-                print(f"iteration {k}:")
-                import random
-
-                mean = 0.0
-                std_dev = 1.0
-                coefficients = [abs(random.gauss(mean, std_dev)) for _ in range(nn)]
-                random.shuffle(coefficients)
-                print(coefficients)
-                E_dict = coloured_octopus(coefficients, mm, nn, list(range(mm)))
-
-                print("smallest eigenvalue in ρ⊗ρ:",
-                        smallest_tensor(E_dict, nn, mm))
-                print(f"coefficients: {coefficients}")
-                print("took: ", time.time()-start,"s")
-                smallest_tensors += [smallest_tensor(E_dict, nn, mm)]
-    print(f"smallest of all is {min(smallest_tensors)}")
+    group_elements, elem_to_idx, _ = build_wreath_product(m, n)
+    for gamma in Gammas:
+        gamma_dict = gamma[0](m,n).get_dict()
+        e_vals_regular = eigenvalues_regular(gamma_dict, group_elements, elem_to_idx, m)
+        print(f"eigenvals 0,1,-1 for {gamma[1]}:",e_vals_regular[0], e_vals_regular[1], e_vals_regular[-1])
+        # if gamma[1] == "Gamma_2233":
+        #     print('\n')
+        #     pprint(gamma_dict)
+        #     print('\n')
+        #     exit(10)
+        
+    # for nn in range(3, n+1):
+    #     for mm in range(2, m+1):
+    # nn=n 
+    # start = time.time()
+    # max_eigenvals_standard = []
+    # max_eigenvals_Cmxn = []
+    # max_eigenvals_tensor = []
+    # max_eigenvals_reg = []
+    # for k in range(1):
+    #     import random
+    #     mean = 0.0
+    #     std_dev = 1.0
+    #     coefficients = [abs(np.random.normal(0,1)) for _ in range(nn)]
+    #     print(coefficients)
+    #     print(2*sum(coefficients[1:])**2)
+    #     # random.shuffle(coefficients)
+    #     for mm in range(m, m+2):
+    #         group_elements, elem_to_idx, idx_to_elem = build_wreath_product(mm, nn)
+    #         E_dict = coloured_octopus(coefficients, mm, nn, list(range(mm)))
+    #         # max_eigenvals_standard += [max(eigenvalues_standard_sn(E_dict, nn))]
+    #         print(nn,mm,eigenvalues_Cmxn(E_dict, nn, mm), max(eigenvalues_standard_sn(E_dict, nn)))
+    #         print(eigenvalues_regular(E_dict, group_elements, elem_to_idx, mm)[:nn*(mm-1)+1])
+            # max_eigenvals_tensor += [eigenvalues_tensor(E_dict, nn, mm)[-2:]]
+            # max_eigenvals_reg += [max(eigenvalues_regular(E_dict, group_elements, elem_to_idx, mm))]
+    # print(f"finished n = {nn}, m = {mm} in {time.time()-start:.2f} seconds")
+    # all_eigvals = [(max_eigenvals_standard[i], max_eigenvals_Cmxn[i], max_eigenvals_tensor[i], 3000000) for i in range(len(max_eigenvals_standard))]
+    # std_diff_c = 0
+    # Cmn_diff_tens_c = 0
+    # tens_diff_c = 0
+    # Cmn_diff_reg_c = 0
+    # for tup in all_eigvals:
+    #     # if (tup[0] != tup[1]):
+    #         # std_diff_c += 1
+    #     if (tup[1][0] != tup[1][1]):
+    #         print(tup[1][0], tup[1][1])
+    #         Cmn_diff_tens_c += 1
+        # if (tup[2] != tup[3]):
+            # tens_diff_c += 1
+        # if (tup[1] != tup[3]):
+            # Cmn_diff_reg_c += 1
+    # assert(tup[3] >= tup [2] and tup[2] >= tup[1] and tup[1] >= tup[0]), f"eigenvalues are not ordered correctly, {tup}"
+    # print(f"std_diff_c = {std_diff_c}, Cmn_diff_tens_c = {Cmn_diff_tens_c}, tens_diff_c = {tens_diff_c}") #, Cmn_diff_reg_c = {Cmn_diff_reg_c}")
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()

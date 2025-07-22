@@ -22,7 +22,7 @@ def build_matrix_regular(E_dict, group_elements, elem_to_idx, m):
     # For each column h_idx, we look up the group element h:
     for h_idx, h in enumerate(group_elements):
         for g, alpha in E_dict.items():
-            u = group_multiply(g, h, m)  # u = g*h
+            u = group_multiply(g.to_tuple(), h, m)  # u = g*h
             u_idx = elem_to_idx[u]
             M[u_idx, h_idx] += alpha
     
