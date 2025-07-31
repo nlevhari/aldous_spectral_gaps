@@ -10,7 +10,7 @@ def wreath_action_on_Cmxn(g, x, i, m):
     (using 0-based indexing).
     Return the resulting pair in C_m x [n].
     """
-    sigma, a_tuple = g
+    sigma, a_tuple = g.to_tuple()
     n = len(sigma)
     inv_sigma = invert_permutation(sigma)
     j = inv_sigma[i]   # index so that sigma(j) = i
@@ -19,7 +19,7 @@ def wreath_action_on_Cmxn(g, x, i, m):
     i_new = sigma[i]
     return (x_new, i_new)
 
-def build_rep_Cmxn_matrix(E_dict, n, m):
+def build_rep_Cmxn_matrix(E_element, n, m):
     """
     Build the matrix of E in the representation of size m*n
     that comes from the natural action on C_m x [n].
@@ -49,7 +49,7 @@ def build_rep_Cmxn_matrix(E_dict, n, m):
     for col_idx, (x,i) in enumerate(basis):
         # E.(x,i) = sum_{g} E_dict[g] * g.(x,i)
         val_dict = {}  # map (x', i') -> total coefficient
-        for g, alpha in E_dict.items():
+        for g, alpha in E_element.coeffs.items():
             (x_new, i_new) = wreath_action_on_Cmxn(g, x, i, m)
             val_dict[(x_new, i_new)] = val_dict.get((x_new, i_new), 0.0) + alpha
         
@@ -63,5 +63,5 @@ def build_rep_Cmxn_matrix(E_dict, n, m):
 def eigenvalues_Cmxn(E_dict, n, m):
     M, basis_to_idx = build_rep_Cmxn_matrix(E_dict, n, m)
     vals, vecs = np.linalg.eig(M)
-    vals = sorted([round(val, 2) for val in vals], reverse=True)
+    vals = sorted([round(val, 2) for val in vals])
     return vals

@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def project_to_Sn(E_dict):
+def project_to_Sn(E_element):
     """
     Given E in the group algebra of C_m wr S_n stored as 
       E_dict[(sigma, a)] = alpha,
@@ -10,7 +10,8 @@ def project_to_Sn(E_dict):
     """
     from collections import defaultdict
     E_sn_dict = defaultdict(float)
-    for (sigma, a), alpha in E_dict.items():
+    for wr_e, alpha in E_element.coeffs.items():
+        sigma, _ = wr_e.to_tuple()  # Get the permutation part
         E_sn_dict[sigma] += alpha
     return dict(E_sn_dict)
 
@@ -39,7 +40,7 @@ def build_perm_rep_matrix(E_sn_dict, n):
         M[:, i] = col_vec
     return M
 
-def eigenvalues_standard_sn(E_dict, n):
+def eigenvalues_standard_sn(E_element, n):
     """
     Given E in the group algebra of C_m wr S_n (as a dict E_dict), 
     compute the eigenvalues of E in the [n] representation of S_n
@@ -52,13 +53,13 @@ def eigenvalues_standard_sn(E_dict, n):
       3) Calculate the eigenvalues.
     """
     # 1) Project to S_n
-    E_sn_dict = project_to_Sn(E_dict)
+    E_sn_dict = project_to_Sn(E_element)
     
     # 2) Build n x n permutation matrix
     M = build_perm_rep_matrix(E_sn_dict, n)
     
     vals, vecs = np.linalg.eig(M)
-    vals = [round(v,2) for v in vals]
+    vals = sorted([round(v,2) for v in vals])
     
     return vals
 

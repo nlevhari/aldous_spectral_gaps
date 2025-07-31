@@ -35,7 +35,7 @@ def invert_permutation(sigma):
         inv[sigma[i]] = i
     return tuple(inv)
 
-def group_multiply(g1, g2, m):
+def group_multiply(g1, g2, n, m):
     """
     Multiply two wreath product elements g1, g2 in C_m^n rtimes S_n.
     g1 = (sigma1, (a1,...,an))
@@ -45,7 +45,6 @@ def group_multiply(g1, g2, m):
     """
     sigma1, a = g1
     sigma2, b = g2
-    n = len(sigma1)
     inv_sigma1 = invert_permutation(sigma1)
     
     # compose permutations
@@ -60,7 +59,7 @@ def group_multiply(g1, g2, m):
     
     return (sigma12, tuple(new_a))
 
-def build_wreath_product(m, n):
+def build_wreath_product(n, m):
     """
     Return:
       group_elements: list of all elements (sigma, (a1,...,an))
@@ -75,11 +74,10 @@ def build_wreath_product(m, n):
     perms = list(permutations(range(n)))  # all n! permutations
     # All possible bottom group elements = (a1,...,an) with ai in {0,...,m-1}
     bottom_tuples = list(product(range(m), repeat=n))
-    
     group_elements = []
     for sigma in perms:
         for bottom in bottom_tuples:
-            group_elements.append((sigma, bottom))
+            group_elements.append(WreathProductElement(sigma, bottom, n, m))
     
     elem_to_idx = {g: i for i, g in enumerate(group_elements)}
     idx_to_elem = {i: g for i, g in enumerate(group_elements)}
@@ -107,7 +105,7 @@ def rho_matrix(elem, n, m):
     def idx(x, i):      # x ∈ {0..m-1},  i ∈ {0..n-1}
         return x * n + i
 
-    sigma, a = elem
+    sigma, a = elem.to_tuple()
     inv_sig  = invert_permutation(sigma)
 
     for x in range(m):
@@ -121,14 +119,14 @@ def rho_matrix(elem, n, m):
 ###############################################################################
 # 2.  ρ⊗ρ(E)  =  Σ_g  α_g · (ρ(g) ⊗ ρ(g))
 ###############################################################################
-def tensor_rep_matrix(E_dict, n, m):
+def tensor_rep_matrix(E_element, n, m):
     """
     Build the big  (mn)² × (mn)²  matrix of E in ρ⊗ρ.
     """
     d  = m * n
     big = np.zeros((d*d, d*d), dtype=float)
 
-    for g, coeff in E_dict.items():
+    for g, coeff in E_element.coeffs.items():
         R = rho_matrix(g, n, m)     # pulled from cache or built once
         big += coeff * np.kron(R, R)
     return big
@@ -148,7 +146,7 @@ def smallest_tensor(E_dict, n, m, tol=1e-12):
 
 
 class WreathProductElement:
-    def __init__(self, sigma, a_tuple):
+    def __init__(self, sigma, a_tuple, n, m):
         """
         Initialize a wreath product element.
         sigma: permutation tuple in S_n
@@ -156,6 +154,8 @@ class WreathProductElement:
         """
         self.sigma = sigma
         self.a_tuple = tuple(a_tuple)
+        self.n = n
+        self.m = m
 
     def __repr__(self):
         return f"WreathProductElement(sigma={self.sigma}, a_tuple={self.a_tuple})"
@@ -173,30 +173,32 @@ class WreathProductElement:
         return (self.sigma, self.a_tuple)
 
     @staticmethod
-    def from_tuple(tup):
+    def from_tuple(tup, n, m):
         """
         Convert from tuple representation to WreathProductElement.
         """
-        return WreathProductElement(tup[0], tup[1])
+        return WreathProductElement(tup[0], tup[1], n, m)
 
     def __mul__(self, other):
         """
         Multiply two wreath product elements.
         """
         if isinstance(other, WreathProductElement):
-            return WreathProductElement.from_tuple(group_multiply(self.to_tuple(), other.to_tuple(), len(self.a_tuple)))
+            return WreathProductElement.from_tuple(group_multiply(self.to_tuple(), other.to_tuple(), self.n, self.m), self.n, self.m)
         else:
             raise TypeError("Can only multiply with another WreathProductElement")
 
 class WreathProductGroupAlgebraElement:
-    def __init__(self, coeffs, n=0):
+    def __init__(self, coeffs, n=0, m=None):
         """
         Initialize a group algebra element.
         coeffs: dictionary mapping WreathProductElement to coefficient or scalar (in that case, n should be input).
         n: size of the group symmetrized, used to create the identity element if coeffs is a scalar. 
         """
         if n!=0:
-            self.coeffs = {WreathProductElement.from_tuple((identity_permutation(n), [0]*n)): coeffs}
+            if m is None:
+                raise ValueError("If n is specified, m must also be specified.")
+            self.coeffs = {WreathProductElement.from_tuple((identity_permutation(n), [0]*n), n, m): coeffs}
         else:
             self.coeffs = coeffs
 

@@ -1,5 +1,5 @@
 import numpy as np
-from wreath_product import identity_permutation
+from wreath_product import WreathProductElement, identity_permutation
 
 def create_c_dict_ij(n, randomize_c=False):
     c_dict_E = {}
@@ -53,7 +53,7 @@ def build_J_ij(i, j, n, m):
             bottom[i] = a_i
             bottom[j] = a_j
             bottom = tuple(bottom)
-            g = (top_perm, bottom)
+            g = WreathProductElement(top_perm, bottom, n, m)
             J_ij[g] = J_ij.get(g, 0.0) + 1.0
     
     return J_ij
@@ -71,7 +71,7 @@ def build_element_E(c_dict, n, m):
     # identity element
     idperm = identity_permutation(n)
     id_bottom = tuple([0]*n)
-    id_elem = (idperm, id_bottom)
+    id_elem = WreathProductElement(idperm, id_bottom, n, m)
     
     for (i, j), c_val in c_dict.items():
         # Add c_{i,j} * (2*m^2 id)
@@ -106,7 +106,7 @@ def build_element_F(x_dict, y_dict, alpha_dict, n, m):
     # identity element
     idperm = identity_permutation(n)
     id_bottom = tuple([0]*n)
-    id_elem = (idperm, id_bottom)
+    id_elem = WreathProductElement(idperm, id_bottom, n, m)
     
     for (i,j), x_ij in x_dict.items():
         # Add c_{i,j} * (2id - id)
@@ -115,7 +115,7 @@ def build_element_F(x_dict, y_dict, alpha_dict, n, m):
         # Subtract c_ij * (ij)
         
         sigma_swap = swap_ij(idperm, i, j)
-        g = (sigma_swap, tuple([0]*n))
+        g = WreathProductElement(sigma_swap, tuple([0]*n), n, m)
         F_dict[g] = F_dict.get(g, 0.0) - x_ij
     
     for w, y_w in y_dict.items():
@@ -124,7 +124,7 @@ def build_element_F(x_dict, y_dict, alpha_dict, n, m):
 
             bottom = [0]*n
             bottom[w] = g
-            h = (idperm, tuple(bottom))
+            h = WreathProductElement(idperm, tuple(bottom), n, m)
             F_dict[h] = F_dict.get(h, 0.0) - y_w * alpha_g
     
     # Remove any zero-coefficient entries (optional cleanup)

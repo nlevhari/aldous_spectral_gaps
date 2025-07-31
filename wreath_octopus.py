@@ -41,7 +41,7 @@ def support_T_pair(i,j, m, n, G_elems):
                 a = [0]*n
                 a[i] = gi   # store colours as integers 0..|G|-1 for speed
                 a[j] = gj
-                yield WreathProductElement(sigma, tuple(a))
+                yield WreathProductElement(sigma, tuple(a), n, m)
 
 ###############################################################################
 # 2.  Dictionary form of  β_{ {i,j} }  = 1 - T_{ {i,j} }
@@ -50,7 +50,7 @@ def support_T_pair(i,j, m, n, G_elems):
 def beta_pair_dict(i,j, m, n, G_elems):
     coeffs = {}       # group_element -> real coefficient
     # start with the identity element, coeff = 1
-    id_elem = WreathProductElement(identity_perm(n), tuple([0]*n))
+    id_elem = WreathProductElement(identity_perm(n), tuple([0]*n), n, m)
     coeffs[id_elem] = 2.0
 
     norm = 1.0 / ( (len(G_elems)**2) * 1.0 )   # (|G|^2)(1!)
@@ -67,11 +67,7 @@ def coloured_octopus(c_list, m, n, G_elems):
     c_list = [c2,...,cn]  (Python indices 0..n-1; we ignore index 0)
     returns a dict  E[g] = coefficient  describing Ω_G(c).
     """
-    E = {}
-    # helper to add dictionaries
-    def add_into(target, source, scale):
-        for g,v in source.items():
-            target[g] = target.get(g,0.0) + scale*v
+    E = WreathProductGroupAlgebraElement({})  # empty dict for coefficients
     #
     Ctot = sum(c_list[1:])
     # first term   (Σ c_i)·(Σ c_j β_{1j})
@@ -79,17 +75,17 @@ def coloured_octopus(c_list, m, n, G_elems):
         if j == 0:
             continue
         beta = beta_pair_dict(0,j,m,n,G_elems)
-        add_into(E, beta, Ctot*cj)
+        E = E + beta * (Ctot * cj)
     # subtract   Σ_{i<j} c_i c_j β_{ij}
     for i in range(1,n-1):
         for j in range(i+1,n):
             beta = beta_pair_dict(i,j,m,n,G_elems)
-            add_into(E, beta, -c_list[i]*c_list[j])
-    return {g:v for g,v in E.items() if abs(v)>1e-15}
+            E = E + beta * (-c_list[i]*c_list[j])
+    return WreathProductGroupAlgebraElement({g:v for g,v in E.coeffs.items() if abs(v)>1e-15})
 
-def w(i, j, n):
-    if i<j: return WreathProductGroupAlgebraElement(2, n)
-    if i==j: return WreathProductGroupAlgebraElement(1, n)
+def w(i, j, n, m):
+    if i<j: return WreathProductGroupAlgebraElement(2, n, m)
+    if i==j: return WreathProductGroupAlgebraElement(1, n, m)
     if j<i: exit(3)
 
 def U(i, j, m, n):
@@ -112,7 +108,7 @@ def Lambda(e1, f1, e2, f2, m, n):
     Returns the Lambda operator for the wreath product algebra.
     e1, f1, e2, f2 are indices.
     """
-    return w(e1, f1, n) * w(e2, f2, n) - Jordan((U(e1, f1, m, n) - w(e1, f1, n)), (U(e2, f2, m, n) - w(e2, f2, n)))
+    return w(e1, f1, n, m) * w(e2, f2, n, m) - Jordan((U(e1, f1, m, n) - w(e1, f1, n, m)), (U(e2, f2, m, n) - w(e2, f2, n, m)))
 
 def Gamma_2222(m, n):
     """

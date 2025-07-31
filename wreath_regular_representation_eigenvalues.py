@@ -2,7 +2,7 @@ import numpy as np
 from wreath_product import group_multiply
 
 
-def build_matrix_regular(E_dict, group_elements, elem_to_idx, m):
+def build_matrix_regular(E_element, group_elements, elem_to_idx, m):
     """
     Build the (size x size) matrix of E in the regular representation,
     where size = len(group_elements).
@@ -21,8 +21,8 @@ def build_matrix_regular(E_dict, group_elements, elem_to_idx, m):
     #
     # For each column h_idx, we look up the group element h:
     for h_idx, h in enumerate(group_elements):
-        for g, alpha in E_dict.items():
-            u = group_multiply(g.to_tuple(), h, m)  # u = g*h
+        for g, alpha in E_element.coeffs.items():
+            u = g * h 
             u_idx = elem_to_idx[u]
             M[u_idx, h_idx] += alpha
     
@@ -35,7 +35,7 @@ def eigenvalues_regular(E_dict, group_elements, elem_to_idx, m):
     # and J_{i,j} is a sum of group elements plus identity, 
     # but let's not assume that. We'll just use eig.
     vals = np.linalg.eigvals(M)
-    return sorted([round(val, 2) for val in vals], reverse=True)  # Round for consistency
+    return sorted([round(val, 2) for val in vals])  # Round for consistency
 
 def second_smallest_eigenvalue(vals, tol=1e-12):
     # Sort the real parts (or magnitudes). Typically they should be real anyway.
