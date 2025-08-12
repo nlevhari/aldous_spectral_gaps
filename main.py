@@ -77,9 +77,9 @@ def check_Gammas(n,m):
         e_vals_regular = eigenvalues_regular(gamma_dict, group_elements, elem_to_idx, m)
         e_vals_Cmxn = eigenvalues_Cmxn(gamma_dict, n, m)
         e_vals_std = eigenvalues_standard_sn(gamma_dict, n)
-        print(f"smallest 2 eigenvals for {gamma[1]}:", e_vals_regular[0], e_vals_regular[1])
-        print(f"smallest 2 Cmxn eigenvals for {gamma[1]}:", e_vals_Cmxn[0], e_vals_Cmxn[1])
-        print(f"smallest 2 std eigenvals for {gamma[1]}:", e_vals_std[0], e_vals_std[1])
+        print(f"first mn eigenvals for {gamma[1]}:", e_vals_regular[: m * n])
+        print(f"Cmxn eigenvals for {gamma[1]}:", e_vals_Cmxn)
+        print(f"std eigenvals for {gamma[1]}:", e_vals_std)
     
 def wrap_reg_eigenvals_to_not_take_too_long(E_element, group_elements, elem_to_idx, m):
     """
@@ -101,7 +101,7 @@ def wrap_reg_eigenvals_to_not_take_too_long(E_element, group_elements, elem_to_i
         signal.alarm(0)  # Disable the alarm after successful execution
         return eigenvals
     except TimeoutException:
-        print("eigenvalues_regular computation timed out. Returning [0, 0].")
+        print("eigenvalues_regular computation timed out. Returning [0, 0, 9999, 9999].")
         return [0, 0, 9999, 9999]
     
 def check_extreme_eigvals(eigenvals_standard, eigenvals_Cmxn, eigenvals_tensor, eigenvals_reg, max=False):
