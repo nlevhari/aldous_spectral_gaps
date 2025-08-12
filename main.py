@@ -5,13 +5,34 @@ import itertools
 import argparse
 from pprint import pprint
 
-from Sn_standard_representation_eigenvalues import eigenvalues_standard_sn
+from Sn_standard_representation_eigenvalues import (
+    eigenvalues_standard_sn,
+    eigenvalues_regular_sn_from_sn,
+    eigenvalues_standard_sn_from_sn,
+    eigenvalues_k_subsets_sn_from_sn,
+)
+from sn_group_algebra import create_c_dict_ijk, build_E_sn_triplets
 from wreath_laplacian import get_E_element, get_F_element
 from wreath_octopus import Gammas, coloured_octopus
 from wreath_product import build_wreath_product, eigenvalues_tensor, smallest_tensor
 from wreath_regular_representation_eigenvalues import eigenvalues_regular
 from wreath_standard_representation_eigenvalues import eigenvalues_Cmxn
 import signal
+
+def run_sn_triplet_checks(n, randomize_c=False, verbose=False):
+    c_dict_ijk = create_c_dict_ijk(n, randomize_c=randomize_c)
+    E_sn = build_E_sn_triplets(c_dict_ijk, n)
+    vals_reg = eigenvalues_regular_sn_from_sn(E_sn, n)
+    vals_std = eigenvalues_standard_sn_from_sn(E_sn, n)          # action on [n]
+    vals_k = eigenvalues_k_subsets_sn_from_sn(E_sn, n, 3) # action on k-subsets
+    if verbose:
+        print(f"S_n triplets regular: {vals_reg}")
+        print(f"S_n triplets [n]-rep: {vals_std}")
+        print(f"S_n triplets 3-subset rep: {vals_k}")
+    else:
+        print(f"S_n triplets regular: smallest two = {vals_reg[0]}, {vals_reg[1]}")
+        print(f"S_n triplets [n]-rep: smallest two = {vals_std[0]}, {vals_std[1]}")
+        print(f"S_n triplets 3-subset: smallest two = {vals_k[0]}, {vals_k[1]}")
 
 def run_single_element_check(n, m, E_dict, c_dict_E, verbose=False):
     def myprint(*args):
@@ -165,6 +186,8 @@ if __name__ == "__main__":
     p.add_argument("-co", "--check-octopus", action="store_true")
     p.add_argument("-com", "--check-octopus-max", action="store_true",)
     p.add_argument("-cg", "--check-gammas", action="store_true")
+    p.add_argument("--sn-triplets", action="store_true",
+                help="run S_n-only checks using beta triplets (3 - 1/2·J_{i,j,k})")
     args = p.parse_args()
     c_dict_ = None
     if args.c_dict is not None:
@@ -184,5 +207,7 @@ if __name__ == "__main__":
                 for i in range(args.num_randomizations):
                     eigenvalue_computation(nn, mm, randomize_c=True)
                 print("took: ", time.time()-start,"s")
+    if args.sn_triplets:
+        run_sn_triplet_checks(n=args.n, randomize_c=args.randomize_c, verbose=False)
     if args.single:
         eigenvalue_computation(args.n, args.m, randomize_c=args.randomize_c, verbose=True, c_dict_=c_dict_)

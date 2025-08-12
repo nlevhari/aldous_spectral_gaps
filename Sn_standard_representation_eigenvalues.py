@@ -1,4 +1,7 @@
 import numpy as np
+from itertools import permutations, combinations
+from wreath_product import compose_permutations
+from sn_group_algebra import SnGroupAlgebraElement
 
 
 def project_to_Sn(E_element):
@@ -39,6 +42,51 @@ def build_perm_rep_matrix(E_sn_dict, n):
         # place col_vec as column i
         M[:, i] = col_vec
     return M
+
+def build_regular_rep_matrix_sn_from_dict(E_sn_dict, n):
+    perms = list(permutations(range(n)))
+    idx = {p: i for i, p in enumerate(perms)}
+    M = np.zeros((len(perms), len(perms)), dtype=float)
+    for h_idx, h in enumerate(perms):
+        for g, alpha in E_sn_dict.items():
+            u = compose_permutations(g, h)  # left-regular: column h -> sum α_g |g∘h⟩
+            M[idx[u], h_idx] += alpha
+    return M
+
+def eigenvalues_regular_sn_from_sn(E_sn, n):
+    E_sn_dict = E_sn.get_dict() if isinstance(E_sn, SnGroupAlgebraElement) else dict(E_sn)
+    M = build_regular_rep_matrix_sn_from_dict(E_sn_dict, n)
+    vals = np.linalg.eigvals(M)
+    return sorted([round(float(v.real), 2) for v in vals])
+
+def build_perm_rep_matrix_from_sn_dict(E_sn_dict, n):
+    M = np.zeros((n, n), dtype=float)
+    for i in range(n):
+        for sigma, alpha in E_sn_dict.items():
+            M[sigma[i], i] += alpha
+    return M
+
+def eigenvalues_standard_sn_from_sn(E_sn, n):
+    E_sn_dict = E_sn.get_dict() if isinstance(E_sn, SnGroupAlgebraElement) else dict(E_sn)
+    M = build_perm_rep_matrix_from_sn_dict(E_sn_dict, n)
+    vals = np.linalg.eigvals(M)
+    return sorted([round(float(v.real), 2) for v in vals])
+
+def build_perm_rep_k_subsets_matrix_from_sn_dict(E_sn_dict, n, k):
+    basis = list(combinations(range(n), k))
+    idx = {S: i for i, S in enumerate(basis)}
+    M = np.zeros((len(basis), len(basis)), dtype=float)
+    for col_idx, S in enumerate(basis):
+        for sigma, alpha in E_sn_dict.items():
+            S_img = tuple(sorted(sigma[i] for i in S))
+            M[idx[S_img], col_idx] += alpha
+    return M
+
+def eigenvalues_k_subsets_sn_from_sn(E_sn, n, k):
+    E_sn_dict = E_sn.get_dict() if isinstance(E_sn, SnGroupAlgebraElement) else dict(E_sn)
+    M = build_perm_rep_k_subsets_matrix_from_sn_dict(E_sn_dict, n, k)
+    vals = np.linalg.eigvals(M)
+    return sorted([round(float(v.real), 2) for v in vals])
 
 def eigenvalues_standard_sn(E_element, n):
     """
